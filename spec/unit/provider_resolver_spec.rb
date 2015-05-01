@@ -18,6 +18,7 @@
 
 require 'spec_helper'
 require 'chef/mixin/convert_to_class_name'
+require 'chef/provider_resolver'
 
 include Chef::Mixin::ConvertToClassName
 
@@ -44,6 +45,10 @@ describe Chef::ProviderResolver do
   let(:resource_name) { :service }
 
   let(:resource) { double(Chef::Resource, provider: provider, resource_name: resource_name) }
+
+  before do
+    allow(resource).to receive(:is_a?).with(Chef::Resource).and_return(true)
+  end
 
   describe "resolving service resource" do
     def stub_service_providers(*services)

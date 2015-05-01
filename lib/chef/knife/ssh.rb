@@ -31,6 +31,7 @@ class Chef
         require 'chef/search/query'
         require 'chef/mixin/shell_out'
         require 'chef/mixin/command'
+        require 'chef/util/path_helper'
         require 'mixlib/shellout'
       end
 
@@ -174,7 +175,9 @@ class Chef
           if config[:attribute_from_cli]
             Chef::Log.debug("Using node attribute '#{config[:attribute_from_cli]}' from the command line as the ssh target")
             host = extract_nested_value(item, config[:attribute_from_cli])
-          elsif item[:cloud] && item[:cloud][:public_hostname]
+          elsif item[:cloud] &&
+                item[:cloud][:public_hostname] &&
+                !item[:cloud][:public_hostname].empty?
             Chef::Log.debug("Using node attribute 'cloud[:public_hostname]' automatically as the ssh target")
             host = item[:cloud][:public_hostname]
           else
@@ -342,8 +345,10 @@ class Chef
 
       def screen
         tf = Tempfile.new("knife-ssh-screen")
-        if File.exist? "#{ENV["HOME"]}/.screenrc"
-          tf.puts("source #{ENV["HOME"]}/.screenrc")
+        Chef::Util::PathHelper.home('.screenrc') do |screenrc_path|
+          if File.exist? screenrc_path
+            tf.puts("source #{screenrc_path}")
+          end
         end
         tf.puts("caption always '%-Lw%{= BW}%50>%n%f* %t%{-}%+Lw%<'")
         tf.puts("hardstatus alwayslastline 'knife ssh #{@name_args[0]}'")

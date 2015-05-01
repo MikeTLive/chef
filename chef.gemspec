@@ -10,8 +10,8 @@ Gem::Specification.new do |s|
   s.description = s.summary
   s.license = "Apache-2.0"
   s.author = "Adam Jacob"
-  s.email = "adam@getchef.com"
-  s.homepage = "http://www.getchef.com"
+  s.email = "adam@chef.io"
+  s.homepage = "http://www.chef.io"
 
   s.required_ruby_version = ">= 2.0.0"
 
@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.add_dependency "mixlib-shellout", ">= 2.0.0.rc.0", "< 3.0"
   s.add_dependency "ohai", "~> 8.0"
 
-  s.add_dependency "ffi-yajl", "~> 1.2"
+  s.add_dependency "ffi-yajl", ">= 1.2", "< 3.0"
   s.add_dependency "net-ssh", "~> 2.6"
   s.add_dependency "net-ssh-multi", "~> 1.1"
   # CHEF-3027: The knife-cloud plugins require newer features from highline, core chef should not.
@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.add_dependency "erubis", "~> 2.7"
   s.add_dependency "diff-lcs", "~> 1.2", ">= 1.2.4"
 
-  s.add_dependency "chef-zero", "~> 4.0"
+  s.add_dependency "chef-zero", "~> 4.1"
   s.add_dependency "pry", "~> 0.9"
 
   s.add_dependency 'plist', '~> 3.1.0'

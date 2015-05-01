@@ -131,6 +131,16 @@ Enable chef-client interval runs by setting `:client_fork = true` in your config
 
   end
 
+  describe "when --no-listen is set" do
+
+    it "configures listen = false" do
+      app.config[:listen] = false
+      app.reconfigure
+      expect(Chef::Config[:listen]).to eq(false)
+    end
+
+  end
+
   describe "when the json_attribs configuration option is specified" do
 
     let(:json_attribs) { {"a" => "b"} }
@@ -305,7 +315,7 @@ describe Chef::Application::Client, "run_application", :unix_only do
         allow(Chef::Daemon).to receive(:daemonize).and_return(true)
       end
 
-      it "should exit hard with exitstatus 3" do
+      it "should exit hard with exitstatus 3", :volatile do
         pid = fork do
           @app.run_application
         end
@@ -320,9 +330,9 @@ describe Chef::Application::Client, "run_application", :unix_only do
         end
         expect(@pipe[0].gets).to eq("started\n")
         Process.kill("TERM", pid)
-        Process.wait
-        sleep 1 # Make sure we give the converging child process enough time to finish
-        expect(IO.select([@pipe[0]], nil, nil, 0)).not_to be_nil
+        Process.wait(pid)
+        # The timeout value needs to be large enough for the child process to finish
+        expect(IO.select([@pipe[0]], nil, nil, 15)).not_to be_nil
         expect(@pipe[0].gets).to eq("finished\n")
       end
     end

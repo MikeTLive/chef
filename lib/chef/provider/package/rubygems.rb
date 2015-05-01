@@ -380,8 +380,13 @@ class Chef
             # Opscode Omnibus - The ruby that ships inside omnibus is only used for Chef
             # Default to installing somewhere more functional
             if new_resource.options && new_resource.options.kind_of?(Hash)
-              msg = "options should be a string instead of a hash\n"
-              msg << "in #{new_resource} from #{new_resource.source_line}"
+              msg = [
+                "Gem options must be passed to gem_package as a string instead of a hash when",
+                "using this installation of Chef because it runs with its own packaged Ruby. A hash",
+                "may only be used when installing a gem to the same Ruby installation that Chef is",
+                "running under.  See https://docs.chef.io/resource_gem_package.html for more information.",
+                "Error raised at #{new_resource} from #{new_resource.source_line}",
+              ].join("\n")
               raise ArgumentError, msg
             end
             gem_location = find_gem_by_path
@@ -533,8 +538,11 @@ class Chef
         def install_via_gem_command(name, version)
           if @new_resource.source =~ /\.gem$/i
             name = @new_resource.source
+          elsif @new_resource.clear_sources
+            src = ' --clear-sources'
+            src << (@new_resource.source && " --source=#{@new_resource.source}" || '')
           else
-            src = @new_resource.source && "  --source=#{@new_resource.source} --source=https://rubygems.org"
+            src = @new_resource.source && " --source=#{@new_resource.source} --source=https://rubygems.org"
           end
           if !version.nil? && version.length > 0
             shell_out!("#{gem_binary_path} install #{name} -q --no-rdoc --no-ri -v \"#{version}\"#{src}#{opts}", :env=>nil)

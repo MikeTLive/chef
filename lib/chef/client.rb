@@ -152,7 +152,6 @@ class Chef
     def initialize(json_attribs=nil, args={})
       @json_attribs = json_attribs || {}
       @node = nil
-      @run_status = nil
       @runner = nil
       @ohai = Ohai::System.new
 
@@ -162,10 +161,18 @@ class Chef
       @events = EventDispatch::Dispatcher.new(*event_handlers)
       @override_runlist = args.delete(:override_runlist)
       @specific_recipes = args.delete(:specific_recipes)
+      @run_status = Chef::RunStatus.new(node, events)
 
       if new_runlist = args.delete(:runlist)
         @json_attribs["run_list"] = new_runlist
       end
+
+      # these slurp in the resource+provider world, so be exceedingly lazy about requiring them
+      require 'chef/platform/provider_priority_map' unless defined? Chef::Platform::ProviderPriorityMap
+      require 'chef/platform/resource_priority_map' unless defined? Chef::Platform::ResourcePriorityMap
+
+      Chef.set_provider_priority_map(Chef::Platform::ProviderPriorityMap.instance)
+      Chef.set_resource_priority_map(Chef::Platform::ResourcePriorityMap.instance)
     end
 
     def configure_formatters
@@ -224,24 +231,24 @@ class Chef
     end
 
     # Instantiates a Chef::Node object, possibly loading the node's prior state
-    # when using chef-client. Delegates to policy_builder
+    # when using chef-client. Delegates to policy_builder.  Injects the built node
+    # into the Chef class.
     #
-    #
-    # === Returns
-    # Chef::Node:: The node object for this chef run
+    # @return [Chef::Node] The node object for this Chef run
     def load_node
       policy_builder.load_node
       @node = policy_builder.node
+      Chef.set_node(@node)
+      node
     end
 
     # Mutates the `node` object to prepare it for the chef run. Delegates to
     # policy_builder
     #
-    # === Returns
-    # Chef::Node:: The updated node object
+    # @return [Chef::Node] The updated node object
     def build_node
       policy_builder.build_node
-      @run_status = Chef::RunStatus.new(node, events)
+      @run_status.node = node
       node
     end
 
@@ -272,7 +279,8 @@ class Chef
     end
 
     def run_ohai
-      ohai.all_plugins
+      filter = Chef::Config[:minimal_ohai] ? %w[fqdn machinename hostname platform platform_version os os_version] : nil
+      ohai.all_plugins(filter)
       @events.ohai_completed(node)
     end
 
@@ -331,8 +339,8 @@ class Chef
           runner.converge
           @events.converge_complete
         rescue Exception => e
-          Chef::Log.error("Converge failed with error message #{e.message}")
           @events.converge_failed(e)
+          raise e if Chef::Config[:audit_mode] == :disabled
           converge_exception = e
         end
       end
@@ -347,6 +355,7 @@ class Chef
         begin
           save_updated_node
         rescue Exception => e
+          raise e if Chef::Config[:audit_mode] == :disabled
           converge_exception = e
         end
       end
@@ -450,7 +459,7 @@ class Chef
 
         if Chef::Config[:why_run] == true
           # why_run should probably be renamed to why_converge
-          Chef::Log.debug("Not running audits in 'why_run' mode - this mode is used to see potential converge changes")
+          Chef::Log.debug("Not running controls in 'why_run' mode - this mode is used to see potential converge changes")
         elsif Chef::Config[:audit_mode] != :disabled
           audit_error = run_audits(run_context)
         end

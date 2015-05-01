@@ -253,6 +253,16 @@ class Chef::Application::Client < Chef::Application
     :description    => "Enable audit-mode with `enabled`. Disable audit-mode with `disabled`. Skip converge and only perform audits with `audit-only`",
     :proc           => lambda { |mo| mo.gsub("-", "_").to_sym }
 
+  option :minimal_ohai,
+    :long           => "--minimal-ohai",
+    :description    => "Only run the bare minimum ohai plugins chef needs to function",
+    :boolean        => true
+
+  option :listen,
+    :long           => "--[no-]listen",
+    :description    => "Whether a local mode (-z) server binds to a port",
+    :boolean        => true
+
   IMMEDIATE_RUN_SIGNAL = "1".freeze
 
   attr_reader :chef_client_json
@@ -451,9 +461,9 @@ class Chef::Application::Client < Chef::Application
 
   def audit_mode_experimental_message
     msg = if Chef::Config[:audit_mode] == :audit_only
-      "Chef-client has been configured to skip converge and run only audits."
+      "Chef-client has been configured to skip converge and only audit."
     else
-      "Chef-client has been configured to run audits after it converges."
+      "Chef-client has been configured to audit after it converges."
     end
     msg += " Audit mode is an experimental feature currently under development. API changes may occur. Use at your own risk."
     msg += audit_mode_settings_explaination

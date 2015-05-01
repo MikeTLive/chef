@@ -305,13 +305,33 @@ class Chef
 
     default :pid_file, nil
 
+    # Whether Chef Zero local mode should bind to a port. All internal requests
+    # will go through the socketless code path regardless, so the socket is
+    # only needed if other processes will connect to the local mode server.
+    #
+    # For compatibility this is set to true but it will be changed to false in
+    # the future.
+    default :listen, true
+
     config_context :chef_zero do
       config_strict_mode true
       default(:enabled) { Chef::Config.local_mode }
       default :host, 'localhost'
       default :port, 8889.upto(9999) # Will try ports from 8889-9999 until one works
     end
+
     default :chef_server_url,   "https://localhost:443"
+    default(:chef_server_root) do
+      # if the chef_server_url is a path to an organization, aka
+      # 'some_url.../organizations/*' then remove the '/organization/*' by default
+      if self.configuration[:chef_server_url] =~ /\/organizations\/\S*$/
+        self.configuration[:chef_server_url].split('/')[0..-3].join('/')
+      elsif self.configuration[:chef_server_url] # default to whatever chef_server_url is
+        self.configuration[:chef_server_url]
+      else
+        "https://localhost:443"
+      end
+    end
 
     default :rest_timeout, 300
     default :yum_timeout, 900
@@ -332,6 +352,11 @@ class Chef
     # a warning is issued in application/client#reconfigure.
     # This can be removed when audit-mode is enabled by default.
     default :audit_mode, :disabled
+
+    # Chef only needs ohai to run the hostname plugin for the most basic
+    # functionality. If the rest of the ohai plugins are not needed (like in
+    # most of our testing scenarios)
+    default :minimal_ohai, false
 
     # Policyfile is an experimental feature where a node gets its run list and
     # cookbook version set from a single document on the server instead of
@@ -497,7 +522,8 @@ class Chef
     default(:syntax_check_cache_path) { cache_options[:path] }
 
     # Deprecated:
-    default(:cache_options) { { :path => PathHelper.join(file_cache_path, "checksums") } }
+    # Move this to the default value of syntax_cache_path when this is removed.
+    default(:cache_options) { { :path => PathHelper.join(config_dir, "syntaxcache") } }
 
     # Whether errors should be raised for deprecation warnings. When set to
     # `false` (the default setting), a warning is emitted but code using
@@ -570,11 +596,12 @@ class Chef
     end
 
     def self.windows_home_path
-      env['SYSTEMDRIVE'] + env['HOMEPATH'] if env['SYSTEMDRIVE'] && env['HOMEPATH']
+      Chef::Log.deprecation("Chef::Config.windows_home_path is now deprecated.  Consider using Chef::Util::PathHelper.home instead.")
+      PathHelper.home
     end
 
     # returns a platform specific path to the user home dir if set, otherwise default to current directory.
-    default( :user_home ) { env['HOME'] || windows_home_path || env['USERPROFILE'] || Dir.pwd }
+    default( :user_home ) { PathHelper.home || Dir.pwd }
 
     # Enable file permission fixup for selinux. Fixup will be done
     # only if selinux is enabled in the system.
@@ -627,7 +654,7 @@ class Chef
     #
     default :no_lazy_load, true
 
-    # Default for the chef_gem compile_time attribute.  Nil is the same as false but will emit
+    # Default for the chef_gem compile_time attribute.  Nil is the same as true but will emit
     # warnings on every use of chef_gem prompting the user to be explicit.  If the user sets this to
     # true then the user will get backcompat behavior but with a single nag warning that cookbooks
     # may break with this setting in the future.  The false setting is the recommended setting and

@@ -1,13 +1,76 @@
 ## Unreleased
+* [**Phil Dibowitz**](https://github.com/jaymzh):
+  Fix multipackage and architectures
+* [**Igor Shpakov**](https://github.com/Igorshp):
+  Always run exception handlers
+* [**Noah Kantrowitz**](https://github.com/coderanger):
+  Cache service_resource_providers for the duration of the run. #2953
+* [**Slava Kardakov**](https://github.com/ojab):
+  Fix installation of yum packages with version constraints #3155
+* [**Dave Eddy**](https://github.com/bahamas10):
+  fix smartos_package for new "pkgin" output, fixes #3112 #3165
 
-* make deploy resource attributes nillable (`symlink_before_migrate nil`) works now
-* mixin the LWRP attribute DSL method into Chef::Resource directly
-* make all LWRP attributes nillable
-* windows service now has a configurable timeout
+* Add an integration test of chef-client with empty ENV. #3321
+* Switch over Windows builds to universal builds. #3278
+* Convert bootstrap template to use sh #2877
+* [Issue #3316](https://github.com/chef/chef/issues/3316) Fix idempotency issues with the `windows_package` resource
+* [pr#3295](https://github.com/chef/chef/pull/3295): Stop mutating `new_resource.checksum` in file providers.  Fixes some ChecksumMismatch exceptions like [issue#3168](https://github.com/chef/chef/issues/3168)
+
+## 12.3.0
+
+* [pr#3160](https://github.com/chef/chef/pull/3160): Use Chef Zero in
+  socketless mode for local mode, add `--no-listen` flag to disable port
+  binding
+* [**Nolan Davidson**](https://github.com/nsdavidson):
+  Removed after_created and added test to recipe_spec
+* [**Tim Sogard**](https://github.com/drags):
+  Reset $HOME to user running chef-client when running via sudo
+* [**Torben Knerr**](https://github.com/tknerr):
+  Allow for the chef gem installation to succeed without elevated privileges #3126
+* [**Mike Dodge**](https://github.com/mikedodge04)
+  MacOSX services: Load LaunchAgents as console user, adding plist and
+  session_type options.
+* [**Eric Herot**](https://github.com/eherot)
+  Ensure knife ssh doesn't use a non-existant field for hostname #3131
+* [**Tom Hughes**](https://github.com/tomhughes)
+  Ensure searches progress in the face of incomplete responses #3135
+
+* [pr#3162](https://github.com/chef/chef/pull/3162): Add
+  `--minimal-ohai` flag to client/solo/apply; restricts ohai to only the
+  bare minimum of plugins.
+* Ensure link's path attribute works with delayed #3130
+* gem_package, chef_gem should not shell out to using https://rubygems.org #2867
+* Add dynamic resource resolution similar to dynamic provider resolution
+* Add Chef class fascade to internal structures
+* Fix nil pointer for windows event logger #3200
+* Use partial search for knife status
+* Ensure chef/knife properly honours proxy config
+
+## 12.2.1
+* [Issue 3153](https://github.com/chef/chef/issues/3153): Fix bug where unset HOME would cause chef to crash
+
+## 12.2.0
+* Update policyfile API usage to match forthcoming Chef Server release
 * `knife ssh` now has an --exit-on-error option that allows users to
   fail-fast rather than moving on to the next machine.
 * migrate macosx, windows, openbsd, and netbsd resources to dynamic resolution
 * migrate cron and mdadm resources to dynamic resolution
+* [Issue 3096](https://github.com/chef/chef/issues/3096) Fix OpenBSD package provider installation issues
+* New `dsc_resource` resource to invoke Powershell DSC resources
+
+## 12.1.2
+* [Issue 3022](https://github.com/chef/chef/issues/3022): Homebrew Cask install fails
+  FIXME (remove on 12.2.0 release): 3022 was only merged to 12-stable and #3077 or its descendant should fix this 
+* [Issue 3059](https://github.com/chef/chef/issues/3059): Chef 12.1.1 yum_package silently fails
+* [Issue 3078](https://github.com/chef/chef/issues/3078): Compat break in audit-mode changes
+
+## 12.1.1
+* [**Phil Dibowitz**](https://github.com/jaymzh):
+  [Issue 3008](https://github.com/chef/chef/issues/3008) Allow people to pass in `source` to package
+* [Issue 3011](https://github.com/chef/chef/issues/3011) `package` provider base should include 
+  `Chef::Mixin::Command` as there are still providers that use it.
+* [**Ranjib Dey**](https://github.com/ranjib):
+  [Issue 3019](https://github.com/chef/chef/issues/3019) Fix data fetching when explicit attributes are passed
 
 ## 12.1.0
 
@@ -113,6 +176,7 @@
 * Add declare_resource/build_resource comments, fix faulty ||=
 * Knife bootstrap creates a client and ships it to the node to implement validatorless bootstraps
 * Knife bootstrap can use the client it creates to setup chef-vault items for the node
+* windows service now has a configurable timeout
 
 ## 12.0.3
 * [**Phil Dibowitz**](https://github.com/jaymzh):
